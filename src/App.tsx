@@ -16,7 +16,7 @@ export default function App() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Intro />} />
-            {/* Manual progress control. Not linked from the header or footer. */}
+            {/* Progress control. Locked without ADMIN_KEY; not linked in the UI. */}
             <Route path="admin" element={<AdminControl />} />
             <Route path="*" element={<NotFound />} />
           </Route>

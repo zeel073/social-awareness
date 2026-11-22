@@ -39,5 +39,10 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    env: {
+      ...process.env,
+      // Matches vite.config.ts default so `/admin?key=e2e-admin` unlocks in tests.
+      ADMIN_KEY: process.env.ADMIN_KEY || 'e2e-admin',
+    },
   },
 })

@@ -1,17 +1,53 @@
 import { useEffect, useId, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router'
 import { DIYA_GOAL } from '../config/site'
 import { siteCrowd } from '../crowd/crowd'
 import { useI18n } from '../i18n/context'
 import { usePage } from '../components/page-context'
+import { adminKeyMatches, isAdminUnlocked, markAdminUnlocked } from './admin-access'
+import NotFound from './NotFound'
 import styles from './AdminControl.module.css'
 
 const crowd = siteCrowd()
 
 /**
  * Manual progress control at `/admin`. Not linked from the rest of the site.
- * Sets the shared count that waiting visitors see after they light their diya.
+ * Without the build-time ADMIN_KEY (`?key=`), visitors get the not-found page.
  */
 export default function AdminControl() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [gate, setGate] = useState<'pending' | 'open' | 'closed'>(() =>
+    isAdminUnlocked() ? 'open' : 'pending',
+  )
+
+  useEffect(() => {
+    if (gate === 'open') return
+    let cancelled = false
+    void (async () => {
+      const key = searchParams.get('key')
+      if (key && (await adminKeyMatches(key))) {
+        markAdminUnlocked()
+        if (!cancelled) {
+          setGate('open')
+          const next = new URLSearchParams(searchParams)
+          next.delete('key')
+          setSearchParams(next, { replace: true })
+        }
+        return
+      }
+      if (!cancelled) setGate('closed')
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [gate, searchParams, setSearchParams])
+
+  if (gate === 'pending') return null
+  if (gate === 'closed') return <NotFound />
+  return <AdminPanel />
+}
+
+function AdminPanel() {
   const { t } = useI18n()
   usePage(t('admin.title'))
   const exactId = useId()

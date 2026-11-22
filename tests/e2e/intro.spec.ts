@@ -159,10 +159,17 @@ test.describe('lighting the intro diya', () => {
       await expectNoAxeViolations(page)
     })
 
+    test('the admin page stays hidden without the key', async ({ page }) => {
+      await page.goto('/admin')
+      await expect(page.getByTestId('admin-control')).toHaveCount(0)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText('Page not found')
+    })
+
     test('the admin page can set the shared count', async ({ page }) => {
       await fakeCrowd(page, 0)
-      await page.goto('/admin')
+      await page.goto('/admin?key=e2e-admin')
       await expect(page.getByTestId('admin-control')).toBeVisible()
+      await expect(page).toHaveURL(/\/admin\/?$/)
       await page.getByRole('button', { name: '+5' }).click()
       await expect(page.getByText('5 of 100')).toBeVisible()
       await page.getByRole('button', { name: 'Jump to 100' }).click()

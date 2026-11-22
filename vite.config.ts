@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { defineConfig } from 'vitest/config'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -10,6 +11,16 @@ function basePath(): string {
   const raw = process.env.BASE_PATH?.trim() || '/'
   const withLead = raw.startsWith('/') ? raw : `/${raw}`
   return withLead.endsWith('/') ? withLead : `${withLead}/`
+}
+
+/**
+ * Hex SHA-256 of ADMIN_KEY. Only the hash is embedded in the client bundle.
+ * Local/CI builds default to "e2e-admin" so Playwright can unlock `/admin`.
+ * Production Pages builds must set the ADMIN_KEY secret.
+ */
+function adminKeyHash(): string {
+  const key = process.env.ADMIN_KEY?.trim() || 'e2e-admin'
+  return createHash('sha256').update(key, 'utf8').digest('hex')
 }
 
 /**
@@ -55,6 +66,7 @@ export default defineConfig({
     // Vercel Web Analytics is served by Vercel itself (/_vercel/insights), so
     // it is only switched on for builds made there (Vercel sets VERCEL=1).
     __VERCEL_ANALYTICS__: JSON.stringify(process.env.VERCEL === '1'),
+    __ADMIN_KEY_HASH__: JSON.stringify(adminKeyHash()),
   },
   build: {
     // Keep every asset as a real file so the CSP never needs to allow data: URIs.

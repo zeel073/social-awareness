@@ -35,9 +35,19 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      # ADMIN_KEY unlocks /admin via ?key=… (hash only is shipped in the bundle).
+      - name: Require ADMIN_KEY secret
+        env:
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
+        run: |
+          if [ -z "$ADMIN_KEY" ]; then
+            echo "Set repository secret ADMIN_KEY before deploying Pages."
+            exit 1
+          fi
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          ADMIN_KEY: ${{ secrets.ADMIN_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
